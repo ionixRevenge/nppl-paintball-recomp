@@ -1,0 +1,20 @@
+# Functions replaced by native runtime code (runtime/src/hle_*.cpp).
+# address  name         (the recompiler emits: void f_ADDR(R5900 *c) { hle_name(c); })
+# --- SCE fileio client (EE libkernel/sifdev): standard IOP fileio command numbers
+0x00120800 sceOpen
+0x00120A88 sceClose
+0x00120E40 sceRead
+0x001210A0 sceWrite
+0x00120C08 sceLseek
+0x00121360 sceIoctl
+0x00122000 sceDopen
+0x001220C8 sceDclose
+0x00122230 sceDread
+0x00122388 sceGetstat
+# --- Chameleon engine diagnostics (log output only; no game logic)
+0x00138C20 game_log
+0x001388E0 game_assert
+# --- libc setjmp/longjmp (Lua error recovery). setjmp stays recompiled; its call sites
+#     also take a host setjmp. longjmp restores the guest registers and host-longjmps there.
+0x00107618 setjmp
+0x00107670 longjmp

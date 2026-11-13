@@ -1,0 +1,14 @@
+#!/bin/sh
+# Refuse commits that could contain game content.
+# Install: git config core.hooksPath tools/hooks
+fail=0
+for f in $(git diff --cached --name-only --diff-filter=AM); do
+  case "$f" in
+    game_iso/README.md) continue ;;
+    game_iso/*|iso/*|asm/*|assets/*|build/*) echo "pre-commit: $f is game-derived; not allowed"; fail=1; continue ;;
+  esac
+  size=$(git cat-file -s ":$f")
+  if [ "$size" -gt 4194304 ]; then echo "pre-commit: $f is over 4 MB"; fail=1; fi
+  if git diff --cached --numstat -- "$f" | grep -q '^-'; then echo "pre-commit: $f is binary"; fail=1; fi
+done
+[ $fail -eq 0 ] || { echo "Commit blocked: this repo must not contain game data."; exit 1; }

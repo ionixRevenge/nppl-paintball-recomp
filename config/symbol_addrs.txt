@@ -1,0 +1,18 @@
+// Format: name = 0xADDR; // type:func|data size:0x..
+// --- crt0 / startup (identified from entry point) ---
+_start = 0x00100008; // type:func
+_InitSys = 0x00125628; // type:func
+main = 0x00137600; // type:func
+exit = 0x00125A10; // type:func
+_fbss = 0x00782B80; // type:u8
+_end = 0x00820600; // type:u8 absolute:True
+
+// --- SCE SDK 2.7.x (identified via self-naming error strings) ---
+sceGpSetAlphaEnvFunc = 0x0012AD20; // type:func
+sceSdRemoteInit = 0x0012CED0; // type:func
+sceDopen = 0x0019CAF0; // type:func
+sceLibnetInitialize = 0x0043DEA8; // type:func
+
+// --- libc (identified by register save/restore pattern) ---
+setjmp = 0x00107618; // type:func
+longjmp = 0x00107670; // type:func

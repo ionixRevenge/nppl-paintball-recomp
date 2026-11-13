@@ -1,0 +1,64 @@
+name: NPPL Championship Paintball 2009 (USA)
+sha1: 3a54509fd715deb3080e05c32a009ba35e1f4568
+options:
+  basename: SLUS_218.55
+  target_path: iso/SLUS_218.55
+  elf_path: build/SLUS_218.55.elf
+  base_path: ..
+  platform: ps2
+  compiler: MWCCPS2
+
+  gp_value: 0x0078A2F0
+  ld_script_path: build/SLUS_218.55.ld
+  ld_dependencies: True
+  find_file_boundaries: True
+  create_asm_dependencies: True
+
+  asm_path: asm
+  src_path: src
+  build_path: build
+  asset_path: assets
+  symbol_addrs_path: config/symbol_addrs.txt
+  undefined_funcs_auto_path: config/undefined_funcs_auto.txt
+  undefined_syms_auto_path: config/undefined_syms_auto.txt
+  extensions_path: tools/splat_ext
+
+  section_order: [".text", ".data", ".rodata", ".bss"]
+  string_encoding: ASCII
+  rodata_string_guesser_level: 2
+  data_string_guesser_level: 2
+  named_regs_for_c_funcs: False
+  mips_abi_float_regs: o32
+  use_legacy_include_asm: False
+  migrate_rodata_to_functions: False
+  disasm_unknown: True
+  make_full_disasm_for_code: True
+  asm_inc_header: ""
+
+segments:
+  - name: header
+    type: header
+    start: 0x0
+
+  - name: main
+    type: code
+    start: 0x80
+    vram: 0x100000
+    bss_size: 0x9DA80
+    subalign: null
+    subsegments:
+      # --- Main EE code (game + Havok 5.5 + Kynapse + SCE libs) ---
+      - [0x80, c, main_text]
+      # --- VU microcode / VIF packets and data ---
+      - [0x583B80, data, vu_data]
+      # --- SCE libkernel data (incl. kernel-patch code, runs at 0x8007xxxx) ---
+      - [0x5AC080, data, main_data]
+      # --- rodata for main_text (splat hint: jumptable at 0x708150) ---
+      - [0x6081D0, rodata, main_text_rodata]
+      # --- Secondary EE code block (only reached via pointers) ---
+      - [0x643D00, c, text2]
+      # --- Switch tables / rodata ---
+      - [0x66C660, rodata, main_rodata]
+      - { start: 0x682C00, type: bss, vram: 0x782B80, name: main_bss }
+
+  - [0x682C00]
