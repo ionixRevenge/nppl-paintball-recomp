@@ -1,13 +1,32 @@
 # NPPL Championship Paintball 2009 — PC Port (static recompilation)
 
-A work-in-progress decompilation of **NPPL Championship Paintball 2009** (PS2, USA, `SLUS-218.55`).
-The goal is a native PC (and later other platforms) version of the game. The game's code is **statically recompiled**:
-`recomp/recomp.py` translates every function of your own executable into C, and `runtime/` replaces the PS2
-hardware (CPU helpers, memory, kernel, graphics, sound, input). Functions can later be swapped for hand-decompiled
-C one at a time.
+A native PC port of **NPPL Championship Paintball 2009** (PS2, USA, `SLUS-218.55`), built by **static
+recompilation**: `recomp/recomp.py` translates every function of your own copy of the game's executable into C,
+and `runtime/` replaces the PS2 hardware (CPU helpers, memory, kernel, graphics, sound, input). Functions can
+later be swapped for hand-decompiled C one at a time.
 
 > This repository contains **no game data**. Put your own dump of the game in `game_iso/`; everything else
 > (`iso/`, `asm/`, `assets/`, `build/`) is generated from it locally and git-ignored.
+
+## Current state: playable, work in progress
+
+The game boots, runs through the menus and **plays full career matches** on PC: correct textures, music and
+sound (ADPCM streams), memory-card saves, and XInput controllers. A Direct3D 11 renderer draws at 2× resolution
+by default (`-scale N`) and runs gameplay at roughly 45–50 fps on a 4-core laptop.
+
+**Known issues**
+
+* **Bunker collision:** running into a bunker head-on at full speed briefly "catches" the player for a split
+  second before releasing (PCSX2 is smooth there). The older bug where players and bots stuck to nets, bunkers
+  and corners permanently is fixed.
+* Intro/cutscene movies (`.PSS`) are skipped (no IPU/MPEG-2 decoding yet).
+* Destination-alpha testing and mipmaps aren't implemented in the renderer yet (only the base texture level is used).
+
+**Planned**
+
+* **Upscaling:** higher-resolution textures and rendering. A GPU xBR texture filter (`-texscale 1|2|4`) and an
+  offline upscaling tool (`tools/upscale_textures.py`) are early steps; proper upscaled texture packs come later.
+* Fixing the bunker collision catch and the other issues above.
 
 ## Target
 
@@ -80,7 +99,7 @@ Requirements: everything from Setup above, plus Visual Studio 2022 (C++ workload
 .venv/Scripts/python recomp/recomp.py iso/SLUS_218.55 build/recomp
 cmake -S runtime -B build/pc -G "Visual Studio 17 2022" -A x64
 cmake --build build/pc --config Release
-build/pc/Release/nppl_pc.exe iso                       # -v for a full trace; log goes to ps2rt.log
+build/pc/Release/nppl_pc.exe game_iso                  # your ISO or its folder; -v for a full trace; log: ps2rt.log
 ```
 
 ### Status
@@ -89,12 +108,12 @@ build/pc/Release/nppl_pc.exe iso                       # -v for a full trace; lo
 |---|---|
 | Recompiler (all 238 R5900/MMI/FPU/VU0-macro opcodes used by the game) | working |
 | Runtime: memory map, CPU helpers, MMI | working |
-| Kernel HLE: threads (fibers), semaphores, interrupts, vblank | first version |
-| IOP side (SIF RPC: CD/DVD, pad, memory card, sound, file I/O) | stubbed — next |
-| GS renderer (GIF/VIF1 DMA → D3D/Vulkan) | not started |
-| VU0/VU1 microcode interpreter | not started |
-| Audio (SPU2 / game's AUDIO.IRX) | not started |
-| Movies (`.PSS` MPEG-2 via IPU) | not started |
+| Kernel HLE: threads (fibers), semaphores, interrupts, vblank timing | working |
+| IOP side (SIF RPC: CD/DVD, pad, memory card, sound, file I/O) | working |
+| GS renderer (GIF/VIF1 DMA → Direct3D 11, plus a software fallback `-sw`) | working; no DATE or mipmaps yet |
+| VU0/VU1 microcode (interpreter + JIT for VU1) | working |
+| Audio (SPU2 / game's AUDIO.IRX, ADPCM streams) | working |
+| Movies (`.PSS` MPEG-2 via IPU) | not started (skipped) |
 
 ## Public release rules
 
@@ -123,7 +142,10 @@ scripts, configuration (addresses and names), and hand-written decompiled C/C++.
 
 ## Porting plan
 
-1. **Split + label** (current stage): identify the SCE, libc, zlib and Havok functions so they can be replaced.
+The static recompilation above already makes the game playable. These are the longer-term steps toward a
+cleaner port that doesn't depend on recompiled middleware:
+
+1. **Split + label:** identify the SCE, libc, zlib and Havok functions so they can be replaced.
 2. **Decompile game + engine code** (~0x140000–0x530000 and the AI code). This is the actual game.
 3. **Replace platform layers:** SCE libs → SDL3 (input, audio, files, timing); GS/VIF/VU1 renderer → OpenGL/Vulkan backend.
 4. **Replace middleware:** Havok 5.5 → an open physics engine (e.g. Jolt), Kynapse → a reimplementation of the pathfinding queries the game uses.
